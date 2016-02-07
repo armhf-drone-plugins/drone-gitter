@@ -1,0 +1,43 @@
+clone:
+  path: github.com/drone-plugins
+  recursive: true
+
+build:
+  image: armhfbuild/golang:1.5
+  environment:
+    - CGO_ENABLED=0
+  commands:
+    - git clone --single-branch https://github.com/drone-plugins/drone-gitter/
+    - cd drone-gitter/
+    - sed -i 's/FROM alpine/FROM armhfbuild\/alpine/' Dockerfile
+    - make deps
+    - make vet
+    - make build
+    - make test
+
+publish:
+  docker:
+    context: drone-gitter
+    file: drone-gitter/Dockerfile
+    username: $$DOCKER_USER
+    password: $$DOCKER_PASSWORD
+    email: $$DOCKER_EMAIL
+    repo: armhfplugins/drone-gitter
+    when:
+      repo: armhf-drone-plugins/drone-gitter
+      branch: master
+
+notify:
+  slack:
+    webhook_url: $$SLACK_WEBHOOK_URL
+    channel: armhf
+
+plugin:
+  name: Gitter
+  desc: Send build status notifications via Gitter
+  type: notify
+  image: armhfplugins/drone-gitter
+  labels:
+    - chat
+    - messaging
+    - gitter
